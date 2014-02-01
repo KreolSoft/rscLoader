@@ -1,4 +1,4 @@
-//* rscLoader 0.01.02 | Copyright (c) 2014 Nikita "IgelHaut" Nitichevski | MIT License *//
+//* rscLoader 0.01.05 | Copyright (c) 2014 Nikita "IgelHaut" Nitichevski | MIT License *//
 
 (function(window, document) {
 	var init = function() {};
@@ -41,6 +41,18 @@
 	
 	function createTag(type, src, target) {
 		try {
+			var rscLoader = document.getElementById('rscLoaderTarget');
+			if(!rscLoader) {
+				var rscLoaderTarget = document.createElement('div');
+				rscLoaderTarget.id = 'rscLoaderTarget';
+				rscLoaderTarget.style.display = 'none';
+				rscLoaderTarget.style.width = '0px';
+				rscLoaderTarget.style.height = '0px';
+				document.body.insertBefore(rscLoaderTarget, document.body.childNodes[0]);
+				
+				rscLoader = document.getElementById('rscLoaderTarget');
+			}
+			
 			if(type == 'css') {
 				var tag = document.createElement('link');
 				tag.href = src;
@@ -64,7 +76,7 @@
 				}
 			};
 			
-			(target || document.body).appendChild(tag);
+			(target || rscLoader).appendChild(tag);
 		}
 		catch(exception) {
 			console.error(exception);
