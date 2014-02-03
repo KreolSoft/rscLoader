@@ -9,7 +9,7 @@ Basic examples - view the sections below.
 
 
 Example - Preloading Files
-=================
+==========================
 	var mainLoader = new rscLoader();				// Create instance
 	
 	// Load with standard file endings like, *.css / *.js / *.png /...
