@@ -1,171 +1,177 @@
-//* rscLoader 0.01.53 | Copyright (c) 2014 Nikita "IgelHaut" Nitichevski | MIT License *//
+//* rscLoader 0.02.61 | Copyright (c) 2014 Nikita "IgelHaut" Nitichevski | MIT License *//
 
 (function(window, document) {
+	/* Resource types */
+	var resourceType = {
+		'stylesheet': {
+			'type': ['css'],
+			'createNode': function(src) {
+				var node = document.createElement('link');
+				node.href = src;
+				node.type = 'text/css';
+				node.rel = 'stylesheet';
+				
+				return node;
+			},
+			'addListener': function(node, resourceLink) {
+				// Workaround for onload event - with to many file laggy...? One timer for all stylesheets?
+				resourceLink.timer = function() {
+					var $this = this;
+					setTimeout(function() {
+						for(var i = 0; i < document.styleSheets.length; i++) {
+							if(document.styleSheets[i].href == $this.src) {
+								$this.ready = true;
+								delete($this.timer);
+								break;
+							}
+						}
+						
+						if(!$this.ready) $this.timer();
+					}, 10);
+				};
+				resourceLink.timer();
+			}
+		},
+		'javascript': {
+			'type': ['js'],
+			'createNode': function(src) {
+				var node = document.createElement('script');
+				node.src = src;
+				node.async = true;
+				node.type = 'text/javascript';
+				
+				return node;
+			},
+			'addListener': function(node, resourceLink) {
+				node.onload = function() {
+					resourceLink.ready = true;
+				};
+			}
+		},
+		'image': {
+			'type': ['png', 'bmp', 'svg', 'gif', 'jpg', 'jpeg'],
+			'createNode': function(src) {
+				var node = document.createElement('img');
+				node.src = src;
+				node.style.display = 'none';
+				node.style.width = '0';
+				node.style.height = '0';
+				
+				return node;
+			},
+			'addListener': function(node, resourceLink) {
+				node.onload = function() {
+					resourceLink.ready = true;
+				};
+			}
+		}
+	};
+
+	/* Get resource container */
+	function resourceContainer() {
+		var rscLoader = document.getElementById('rscLoaderTarget');
+		if(!rscLoader) {
+			var rscLoaderTarget = document.createElement('div');
+			rscLoaderTarget.id = 'rscLoaderTarget';
+			rscLoaderTarget.style.display = 'none';
+			rscLoaderTarget.style.width = '0';
+			rscLoaderTarget.style.height = '0';
+			document.body.insertBefore(rscLoaderTarget, document.body.childNodes[0]);
+			
+			rscLoader = document.getElementById('rscLoaderTarget');
+		}
+		
+		return rscLoader;
+	}
+
+	/* Engine */
 	var init = function() {
 		var $this = this;
 		
-		this.timer = null;
+		// Resource library
+		this.resources = [];
 		
-		this.resources = {
-			'css': [],
-			'js': [],
-			'img': []
-		};
+		// Listener library
+		var listener = [];
 		
-		this.listener = {
-			'css': [],
-			'js': [],
-			'img': [],
-			'all': [],
-		};
-		
+		// Timer
+		_timer = null;
 		function timer() {
-			try {
-				$this.timer = setTimeout(function() {
-					
-					for(var t in $this.listener) {
-						for(var i = 0; i < $this.listener[t].length; i++) {
-							$this.listener[t][i].call($this, $this.stats(t), (t == 'all' ? $this.resources : $this.resources[t]));
-						}
-					}
-					if($this.stats('all').loaded < $this.stats('all').overall) timer();
-				}, 50);
-			}
-			catch(exception) {
-				console.error(exception);
-			}
+			_timer = setTimeout(function() {
+				for(var i = 0; i < listener.length; i++)
+					listener[i].callback($this.stats(listener[i].type), $this.resources);
+				
+				if($this.stats('all').ready < $this.stats('all').overall) timer();
+			}, 50);
 		}
 		
-		function createTag(type, src, target) {
-			try {
-				var rscLoader = document.getElementById('rscLoaderTarget');
-				if(!rscLoader) {
-					var rscLoaderTarget = document.createElement('div');
-					rscLoaderTarget.id = 'rscLoaderTarget';
-					rscLoaderTarget.style.display = 'none';
-					rscLoaderTarget.style.width = '0px';
-					rscLoaderTarget.style.height = '0px';
-					document.body.insertBefore(rscLoaderTarget, document.body.childNodes[0]);
-					
-					rscLoader = document.getElementById('rscLoaderTarget');
-				}
+		// Group / type / overall statistics
+		this.stats = function(type) {
+			var output = {
+				'overall': 0,
+				'ready': 0,
+				'notready': 0
+			};
+			
+			for(var i = 0; i < $this.resources.length; i++) {
+				if(type != 'all' && type != $this.resources[i].type)
+					continue;
 				
-				if(type == 'css') {
-					var tag = document.createElement('link');
-					tag.href = src;
-					tag.type = 'text/css';
-					tag.rel = 'stylesheet';
-				}
-				else if(type == 'js') {
-					var tag = document.createElement('script');
-					tag.src = src;
-					tag.type = 'text/javascript';
-				}
-				else if(type == 'img') {
-					var tag = document.createElement('img');
-					tag.src = src;
-					tag.style.display = 'none';
-				}
-				tag.onload = function() {
-					for(var i = 0; i < $this.resources[type].length; i++) {
-						if($this.resources[type][i].src == src)
-							$this.resources[type][i].loaded = true;
-					}
-				};
-				tag.onreadystatechange = function() {
-					if(this.readyState == 'complete') {
-						for(var i = 0; i < $this.resources[type].length; i++) {
-							if($this.resources[type][i].src == src)
-								$this.resources[type][i].loaded = true;
-						}
-					}
-				};
-				
-				(target || rscLoader).appendChild(tag);
+				output.overall++;
+				if($this.resources[i].ready) output.ready++;
+				if(!$this.resources[i].ready) output.notready++;
 			}
-			catch(exception) {
-				console.error(exception);
-			}
-		}
-		
-		this.stats = function (type) {
-			try {
-				if(['css', 'js', 'img', 'all'].indexOf(type) == -1)
-					throw 'rscLoader error: Invalid resource type given.'
-				
-				var overall = 0;
-				var loaded = 0;
-				var notloaded = 0;
-				for(var t in this.resources) {
-					if(type != 'all' && t != type)
-						continue;
-					
-					for(var i = 0; i < this.resources[t].length; i++) {
-						overall++;
-						if(!this.resources[t][i].loaded) notloaded++;
-						if(this.resources[t][i].loaded) loaded++;
-					}
-				}
-				
-				return {
-					'overall': overall,
-					'loaded': loaded,
-					'notloaded': notloaded
-				};
-			}
-			catch(exception) {
-				console.error(exception);
-			}
+			
+			return output;
 		};
 		
-		
+		// Load resource
 		this.load = function(src, type) {
-			try {
-				if(!src)
-					throw 'rscLoader error: Resource not given.';
-				
+			// Get type
+			if(!type || !resourceType[type]) {
+				for(var t in resourceType) {
+					if(resourceType[t].type.indexOf(src.substr(src.lastIndexOf('.')+1)) != -1) {
+						type = t;
+						break;
+					}
+				}
 				if(!type)
-					type = src.substr(src.lastIndexOf('.')+1);
-				if(['png', 'bmp', 'svg', 'gif', 'jpg', 'jpeg'].indexOf(type) != -1)
-					type = 'img';
-				if(['css', 'js', 'img'].indexOf(type) == -1)
-					throw 'rscLoader error: Invalid resource type given.'
-				
-				this.resources[type].push({
-					'src': src,
-					'loaded': false
-				});
-				
-				if(!this.timer)
-					timer();
-				
-				createTag(type, src);
-				
-				return this;
+					return;
 			}
-			catch(exception) {
-				console.error(exception);
-			}
+			
+			// Insert into resource library
+			$this.resources.push({
+				'type': type,
+				'src': src,
+				'ready': false
+			});
+			
+			if(!_timer)
+				timer();
+			
+			// Create resource node
+			var node = resourceType[type].createNode(src);
+				// Add onload listener
+				resourceType[type].addListener(node, $this.resources[($this.resources.length-1)]);
+			
+			// Inject node asynchronously
+			setTimeout(function() {
+				resourceContainer().insertBefore(node);
+			}, 0);
+			
+			return $this;
 		};
 		
-		
+		// Add listener
 		this.listen = function(type, callback) {
-			try {
-				if(['css', 'js', 'img', 'all'].indexOf(type) == -1)
-					throw 'rscLoader error: Invalid resource type given.'
-				
-				if(!callback || typeof(callback) != 'function')
-					throw 'rscLoader error: Invalid callback given.'
-				
-				this.listener[type].push(callback);
-				
-				return this;
-			}
-			catch(exception) {
-				console.error(exception);
-			}
+			listener.push({
+				'type': type,
+				'callback': callback
+			});
+			
+			return $this;
 		};
 	};
 	
-	window.rscLoader = init;
+	window.rscLoader = window._rscLoader = init;
 })(window, document);
