@@ -1,4 +1,4 @@
-//* rscLoader 0.02.75 | Copyright (c) 2014 Nikita "IgelHaut" Nitichevski | MIT License *//
+//* rscLoader 0.02.77 | Copyright (c) 2014 Nikita "IgelHaut" Nitichevski | MIT License *//
 
 (function(window, document) {
 	"use strict";
@@ -111,8 +111,23 @@
 				for(var i = 0; i < listener.length; i++)
 					listener[i].callback($this.stats(listener[i].type), $this.resources);
 				
-				if($this.stats('all').ready < $this.stats('all').overall) timer();
+				if($this.stats('all').ready < $this.stats('all').overall) {
+					timer();
+				}
+				else {
+					window.clearTimeout(_timer);
+					window.clearTimeout(_timeoutTimer);
+				}
 			}, 50);
+		}
+		
+		// Timeout timer
+		var _timeoutTimer = null;
+		function timeoutTimer() {
+			_timeoutTimer = window.setTimeout(function() {
+				for(var i = 0; i < $this.resources.length; i++)
+					$this.resources[i].ready = true;
+			}, 1000*60*3);
 		}
 		
 		// Group / type / overall statistics
@@ -140,7 +155,7 @@
 			// Get type
 			if(!type || !resourceType[type]) {
 				for(var t in resourceType) {
-					if(resourceType[t].type.indexOf(src.substr(src.lastIndexOf('.')+1)) != -1) {
+					if(in_array(src.substr(src.lastIndexOf('.')+1), resourceType[t].type)) {
 						type = t;
 						break;
 					}
@@ -156,8 +171,11 @@
 				"ready": false
 			});
 			
-			if(!_timer)
+			if(!_timer) {
 				timer();
+				// Set timeout of loader
+				timeoutTimer();
+			}
 			
 			// Create resource node
 			var node = resourceType[type].createNode(src);
@@ -183,39 +201,16 @@
 		};
 	};
 	
+	/* Register */
 	window.rscLoader = window._rscLoader = init;
 	
-	if (!Array.prototype.indexOf) {
-		Array.prototype.indexOf = function(searchElement /*, fromIndex */ ) {
-			"use strict";
-			if(this == null)
-				throw new TypeError();
-			
-			var t = Object(this);
-			var len = t.length >>> 0;
-
-			if(len === 0)
-				return -1;
-			
-			var n = 0;
-			if (arguments.length > 1) {
-				n = Number(arguments[1]);
-				if(n != n) {
-					n = 0;
-				}
-				else if(n != 0 && n != Infinity && n != -Infinity) {
-					n = (n > 0 || -1) * Math.floor(Math.abs(n));
-				}
-			}
-			if(n >= len)
-				return -1;
-			
-			var k = n >= 0 ? n : Math.max(len - Math.abs(n), 0);
-			for(; k < len; k++) {
-				if(k in t && t[k] === searchElement)
-					return k;
-			}
-			return -1;
+	/* Helper */
+	function in_array(data, array) {
+		for(var i = 0; i < array.length; i++) {
+			if(array[i] == data)
+				return true;
 		}
+		
+		return false;
 	}
 })(window, document);
