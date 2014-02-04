@@ -1,13 +1,13 @@
-//* rscLoader 0.02.64 | Copyright (c) 2014 Nikita "IgelHaut" Nitichevski | MIT License *//
+//* rscLoader 0.02.75 | Copyright (c) 2014 Nikita "IgelHaut" Nitichevski | MIT License *//
 
 (function(window, document) {
 	"use strict";
 	
 	/* Resource types */
 	var resourceType = {
-		'stylesheet': {
-			'type': ['css'],
-			'createNode': function(src) {
+		"stylesheet": {
+			"type": ["css"],
+			"createNode": function(src) {
 				var node = document.createElement('link');
 				node.href = src;
 				node.type = 'text/css';
@@ -15,7 +15,7 @@
 				
 				return node;
 			},
-			'addListener': function(node, resourceLink) {
+			"addListener": function(node, resourceLink) {
 				// Workaround for onload event - with to many file laggy...? One timer for all stylesheets?
 				resourceLink.timer = function() {
 					var $this = this;
@@ -34,9 +34,9 @@
 				resourceLink.timer();
 			}
 		},
-		'javascript': {
-			'type': ['js'],
-			'createNode': function(src) {
+		"javascript": {
+			"type": ["js"],
+			"createNode": function(src) {
 				var node = document.createElement('script');
 				node.src = src;
 				node.async = true;
@@ -44,7 +44,7 @@
 				
 				return node;
 			},
-			'addListener': function(node, resourceLink) {
+			"addListener": function(node, resourceLink) {
 				node.onload = function() {
 					resourceLink.ready = true;
 				};
@@ -54,9 +54,9 @@
 				};
 			}
 		},
-		'image': {
-			'type': ['png', 'bmp', 'svg', 'gif', 'jpg', 'jpeg'],
-			'createNode': function(src) {
+		"image": {
+			"type": ["png", "bmp", "svg", "gif", "jpg", "jpeg"],
+			"createNode": function(src) {
 				var node = document.createElement('img');
 				node.src = src;
 				node.style.display = 'none';
@@ -65,7 +65,7 @@
 				
 				return node;
 			},
-			'addListener': function(node, resourceLink) {
+			"addListener": function(node, resourceLink) {
 				node.onload = function() {
 					resourceLink.ready = true;
 				};
@@ -118,9 +118,9 @@
 		// Group / type / overall statistics
 		this.stats = function(type) {
 			var output = {
-				'overall': 0,
-				'ready': 0,
-				'notready': 0
+				"overall": 0,
+				"ready": 0,
+				"notready": 0
 			};
 			
 			for(var i = 0; i < $this.resources.length; i++) {
@@ -151,9 +151,9 @@
 			
 			// Insert into resource library
 			$this.resources.push({
-				'type': type,
-				'src': src,
-				'ready': false
+				"type": type,
+				"src": src,
+				"ready": false
 			});
 			
 			if(!_timer)
@@ -175,8 +175,8 @@
 		// Add listener
 		this.listen = function(type, callback) {
 			listener.push({
-				'type': type,
-				'callback': callback
+				"type": type,
+				"callback": callback
 			});
 			
 			return $this;
@@ -184,4 +184,38 @@
 	};
 	
 	window.rscLoader = window._rscLoader = init;
+	
+	if (!Array.prototype.indexOf) {
+		Array.prototype.indexOf = function(searchElement /*, fromIndex */ ) {
+			"use strict";
+			if(this == null)
+				throw new TypeError();
+			
+			var t = Object(this);
+			var len = t.length >>> 0;
+
+			if(len === 0)
+				return -1;
+			
+			var n = 0;
+			if (arguments.length > 1) {
+				n = Number(arguments[1]);
+				if(n != n) {
+					n = 0;
+				}
+				else if(n != 0 && n != Infinity && n != -Infinity) {
+					n = (n > 0 || -1) * Math.floor(Math.abs(n));
+				}
+			}
+			if(n >= len)
+				return -1;
+			
+			var k = n >= 0 ? n : Math.max(len - Math.abs(n), 0);
+			for(; k < len; k++) {
+				if(k in t && t[k] === searchElement)
+					return k;
+			}
+			return -1;
+		}
+	}
 })(window, document);
