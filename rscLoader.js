@@ -1,4 +1,4 @@
-//* rscLoader 0.02.61 | Copyright (c) 2014 Nikita "IgelHaut" Nitichevski | MIT License *//
+//* rscLoader 0.02.63 | Copyright (c) 2014 Nikita "IgelHaut" Nitichevski | MIT License *//
 
 (function(window, document) {
 	/* Resource types */
@@ -46,6 +46,10 @@
 				node.onload = function() {
 					resourceLink.ready = true;
 				};
+				node.onreadystatechange = function() {
+					if(this.readyState == 'complete')
+						resourceLink.ready = true;
+				};
 			}
 		},
 		'image': {
@@ -62,6 +66,10 @@
 			'addListener': function(node, resourceLink) {
 				node.onload = function() {
 					resourceLink.ready = true;
+				};
+				node.onreadystatechange = function() {
+					if(this.readyState == 'complete')
+						resourceLink.ready = true;
 				};
 			}
 		}
