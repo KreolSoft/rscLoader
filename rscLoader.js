@@ -1,6 +1,8 @@
-//* rscLoader 0.02.63 | Copyright (c) 2014 Nikita "IgelHaut" Nitichevski | MIT License *//
+//* rscLoader 0.02.64 | Copyright (c) 2014 Nikita "IgelHaut" Nitichevski | MIT License *//
 
 (function(window, document) {
+	"use strict";
+	
 	/* Resource types */
 	var resourceType = {
 		'stylesheet': {
@@ -17,7 +19,7 @@
 				// Workaround for onload event - with to many file laggy...? One timer for all stylesheets?
 				resourceLink.timer = function() {
 					var $this = this;
-					setTimeout(function() {
+					window.setTimeout(function() {
 						for(var i = 0; i < document.styleSheets.length; i++) {
 							if(document.styleSheets[i].href == $this.src) {
 								$this.ready = true;
@@ -103,9 +105,9 @@
 		var listener = [];
 		
 		// Timer
-		_timer = null;
+		var _timer = null;
 		function timer() {
-			_timer = setTimeout(function() {
+			_timer = window.setTimeout(function() {
 				for(var i = 0; i < listener.length; i++)
 					listener[i].callback($this.stats(listener[i].type), $this.resources);
 				
