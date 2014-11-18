@@ -1,4 +1,4 @@
-//* rscLoader 0.02.77 | Copyright (c) 2014 Nikita "IgelHaut" Nitichevski | MIT License *//
+//* rscLoader 0.02.78 | Copyright (c) 2014 Nikita "IgelHaut" Nitichevski | MIT License *//
 
 (function(window, document) {
 	"use strict";
@@ -16,7 +16,7 @@
 				return node;
 			},
 			"addListener": function(node, resourceLink) {
-				// Workaround for onload event - with to many file laggy...? One timer for all stylesheets?
+				// Workaround for onload event - with to many files laggy...? One timer for all stylesheets?
 				resourceLink.timer = function() {
 					var $this = this;
 					window.setTimeout(function() {
@@ -49,7 +49,8 @@
 					resourceLink.ready = true;
 				};
 				node.onreadystatechange = function() {
-					if(this.readyState == 'complete')
+					// Bugfix IE 8 - readystate 'loaded' triggers ready
+					if(this.readyState == 'loaded' || this.readyState == 'complete')
 						resourceLink.ready = true;
 				};
 			}
@@ -184,7 +185,7 @@
 			
 			// Inject node asynchronously
 			setTimeout(function() {
-				resourceContainer().insertBefore(node);
+				resourceContainer().insertBefore(node, null);
 			}, 0);
 			
 			return $this;
